@@ -1,8 +1,17 @@
 AR	= ar
 ARFLAGS = -r
 
-CC	= gcc-5
-CFLAGS	= -std=c99 -Wall -Wextra -Werror -I../include
+CC	= mpicc
+CFLAGS	= -std=gnu99 -Wall -Wextra -Werror -I../include
+
+# do not build malloc, just the mspaces API
+CFLAGS += -DONLY_MSPACES
+
+# use pthread_once to make initialization reentrant
+CFLAGS += -DUSE_PTHREAD
+
+# query MPI for nproc and threads
+CFLAGS += -DUSE_MPI
 
 all: libhbwmalloc.a
 

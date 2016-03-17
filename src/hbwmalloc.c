@@ -24,6 +24,7 @@ pthread_once_t myhbwmalloc_once_control = PTHREAD_ONCE_INIT;
 #endif
 
 int myhbwmalloc_verbose;
+int myhbwmalloc_hardfail;
 int myhbwmalloc_numa_node;
 size_t myhbwmalloc_slab_size;
 void * myhbwmalloc_slab;
@@ -53,8 +54,43 @@ static void myhbwmalloc_init(void)
         }
     }
 
-    /* FIXME this is a hack.  assumes HBW is only numa node 1. */
-    myhbwmalloc_numa_node = 1;
+    /* fail hard or soft? */
+    myhbwmalloc_hardfail = 1;
+    {
+        char * env_char = getenv("HBWMALLOC_SOFTFAIL");
+        if (env_char != NULL) {
+            myhbwmalloc_hardfail = 0;
+        }
+    }
+
+    /* detect and configure use of NUMA memory nodes */
+    {
+        int max_numa_nodes = numa_max_node();
+        /* FIXME this is a hack.  assumes HBW is only numa node 1. */
+        if (max_numa_nodes == 2) {
+            myhbwmalloc_numa_node = 1;
+        } else {
+            fprintf(stderr,"hbwmalloc: we support only 2 numa nodes, not %d\n", max_numa_nodes);
+        }
+
+        if (myhbwmalloc_verbose) {
+            for (int i=0; i<max_numa_nodes; i++) {
+                unsigned max_numa_cpus = numa_num_configured_cpus();
+                struct bitmask * mask = numa_bitmask_alloc( max_numa_cpus );
+                int rc = numa_node_to_cpus(i, mask);
+                if (rc != 0) {
+                    fprintf(stderr, "hbwmalloc: numa_node_to_cpus failed\n");
+                } else {
+                    for (unsigned j=0; j<max_numa_cpus; j++) {
+                        int bit = numa_bitmask_isbitset(mask,j);
+                        printf("hbwmalloc: numa node %d cpu %d = %d", i, j, bit);
+                    }
+                }
+                numa_bitmask_free(mask);
+            }
+            fflush(stdout);
+        }
+    }
 
 #if 0 /* unused */
     /* see if the user specifies a slab size */
@@ -91,7 +127,8 @@ static void myhbwmalloc_init(void)
         myhbwmalloc_slab_size = freemem;
     }
 
-    int multithreaded = 1; /* assume threads, disable if MPI knows otherwise. */
+    /* assume threads, disable if MPI knows otherwise, then allow user to override. */
+    int multithreaded = 1;
 #ifdef HAVE_MPI
     int nprocs;
     {
@@ -126,6 +163,17 @@ static void myhbwmalloc_init(void)
         }
     }
 #endif
+
+    /* user can assert that hbwmalloc and friends need not be thread-safe */
+    {
+        char * env_char = getenv("HBWMALLOC_LOCKLESS");
+        if (env_char != NULL) {
+            multithreaded = 0;
+            if (myhbwmalloc_verbose) {
+                printf("hbwmalloc: user has disabled locking in mspaces by setting HBWMALLOC_LOCKLESS\n");
+            }
+        }
+    }
 
     /* set to NULL before trying to initialize.  if we return before
      * successful creation of the mspace, then it will still be NULL,
@@ -194,26 +242,46 @@ int hbw_check_available(void)
 
 void* hbw_malloc(size_t size)
 {
+    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
+        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+        return malloc(size);
+    }
     return mspace_malloc(myhbwmalloc_mspace, size);
 }
 
 void* hbw_calloc(size_t nmemb, size_t size)
 {
+    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
+        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+        return calloc(nmemb, size);
+    }
     return mspace_calloc(myhbwmalloc_mspace, nmemb, size);
 }
 
 void* hbw_realloc (void *ptr, size_t size)
 {
+    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
+        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+        return realloc(ptr, size);
+    }
     return mspace_realloc(myhbwmalloc_mspace, ptr, size);
 }
 
 void hbw_free(void *ptr)
 {
+    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
+        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+        return free(ptr);
+    }
     mspace_free(myhbwmalloc_mspace, ptr);
 }
 
 int hbw_posix_memalign(void **memptr, size_t alignment, size_t size)
 {
+    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
+        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+        return posix_memalign(memptr, alignment, size);
+    }
     *memptr = mspace_memalign(myhbwmalloc_mspace, alignment, size);
     return (*memptr == NULL) ? -1 : 0;
 }
