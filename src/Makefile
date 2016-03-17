@@ -1,6 +1,7 @@
 AR	= ar
 ARFLAGS = -r
 
+# posix_memalign not declared in strict C99 so we have to use GNU99
 CC	= mpicc
 CFLAGS	= -std=gnu99 -Wall -Wextra -Werror -I../include
 
@@ -16,10 +17,10 @@ CFLAGS += -DUSE_MPI
 all: libhbwmalloc.a
 
 libhbwmalloc.a: dlmalloc.o hbwmalloc.o
-	$(AR) $(ARFLAGS) $@ $<
+	$(AR) $(ARFLAGS) $@ dlmalloc.o hbwmalloc.o
 
 dlmalloc.o: dlmalloc.c
-	$(CC) -std=c89 -ansi -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 hbwmalloc.o: hbwmalloc.c mspace.h
 	$(CC) $(CFLAGS) -c $< -o $@

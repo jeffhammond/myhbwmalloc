@@ -45,12 +45,19 @@ static void myhbwmalloc_final(void)
 
 static void myhbwmalloc_init(void)
 {
+    /* set to NULL before trying to initialize.  if we return before
+     * successful creation of the mspace, then it will still be NULL,
+     * and we can use that in subsequent library calls to determine
+     * that the library failed to initialize. */
+    myhbwmalloc_mspace = NULL;
+
     /* verbose printout? */
-    myhbwmalloc_verbose = 0;
+    myhbwmalloc_verbose = 1; /* change to 0 for production */
     {
         char * env_char = getenv("HBWMALLOC_VERBOSE");
         if (env_char != NULL) {
             myhbwmalloc_verbose = 1;
+            printf("hbwmalloc: HBWMALLOC_VERBOSE set\n");
         }
     }
 
@@ -60,15 +67,22 @@ static void myhbwmalloc_init(void)
         char * env_char = getenv("HBWMALLOC_SOFTFAIL");
         if (env_char != NULL) {
             myhbwmalloc_hardfail = 0;
+            printf("hbwmalloc: HBWMALLOC_SOFTFAIL set\n");
         }
     }
+
+    /* set the atexit handler that will destroy the mspace and free the numa allocation */
+    atexit(myhbwmalloc_final);
 
     /* detect and configure use of NUMA memory nodes */
     {
         int max_numa_nodes = numa_max_node();
         /* FIXME this is a hack.  assumes HBW is only numa node 1. */
-        if (max_numa_nodes == 2) {
-            myhbwmalloc_numa_node = 1;
+        if (max_numa_nodes <= 2) {
+            myhbwmalloc_numa_node = max_numa_nodes-1;
+            if (myhbwmalloc_verbose && max_numa_nodes==1) {
+                printf("hbwmalloc: only 1 node found - using it for hbwmalloc\n");
+            }
         } else {
             fprintf(stderr,"hbwmalloc: we support only 2 numa nodes, not %d\n", max_numa_nodes);
         }
@@ -81,10 +95,12 @@ static void myhbwmalloc_init(void)
                 if (rc != 0) {
                     fprintf(stderr, "hbwmalloc: numa_node_to_cpus failed\n");
                 } else {
+                    printf("hbwmalloc: numa node %d cpu mask:", i);
                     for (unsigned j=0; j<max_numa_cpus; j++) {
                         int bit = numa_bitmask_isbitset(mask,j);
-                        printf("hbwmalloc: numa node %d cpu %d = %d", i, j, bit);
+                        printf(" %d", bit);
                     }
+                    printf("\n");
                 }
                 numa_bitmask_free(mask);
             }
@@ -175,20 +191,15 @@ static void myhbwmalloc_init(void)
         }
     }
 
-    /* set to NULL before trying to initialize.  if we return before
-     * successful creation of the mspace, then it will still be NULL,
-     * and we can use that in subsequent library calls to determine
-     * that the library failed to initialize. */
-    myhbwmalloc_mspace = NULL;
-
-    /* set the atexit handler that will destroy the mspace and free the numa allocation */
-    atexit(myhbwmalloc_final);
-
     myhbwmalloc_slab = numa_alloc_onnode( myhbwmalloc_slab_size, myhbwmalloc_numa_node);
     if (myhbwmalloc_slab==NULL) {
-        fprintf(stderr, "hbwmalloc: numa_alloc_onnode returned NULL\n");
+        fprintf(stderr, "hbwmalloc: numa_alloc_onnode returned NULL for size = %zu\n", myhbwmalloc_slab_size);
         return;
     } else {
+        if (myhbwmalloc_verbose) {
+            printf("hbwmalloc: numa_alloc_onnode succeeded for size %zu\n", myhbwmalloc_slab_size);
+        }
+
         /* part (less than 128*sizeof(size_t) bytes) of this space is used for bookkeeping,
          * so the capacity must be at least this large */
         if (myhbwmalloc_slab_size < 128*sizeof(size_t)) {
@@ -202,6 +213,8 @@ static void myhbwmalloc_init(void)
         if (myhbwmalloc_mspace == NULL) {
             fprintf(stderr, "hbwmalloc: create_mspace_with_base returned NULL\n");
             return;
+        } else if (myhbwmalloc_verbose) {
+            printf("hbwmalloc: create_mspace_with_base succeeded for size %zu\n", myhbwmalloc_slab_size);
         }
     }
 }
