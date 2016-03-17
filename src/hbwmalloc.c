@@ -52,7 +52,7 @@ static void myhbwmalloc_init(void)
     myhbwmalloc_mspace = NULL;
 
     /* verbose printout? */
-    myhbwmalloc_verbose = 1; /* change to 0 for production */
+    myhbwmalloc_verbose = 0;
     {
         char * env_char = getenv("HBWMALLOC_VERBOSE");
         if (env_char != NULL) {
