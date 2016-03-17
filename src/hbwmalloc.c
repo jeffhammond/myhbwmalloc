@@ -120,7 +120,7 @@ static void myhbwmalloc_init(void)
     /* see if the user specifies a slab size */
     size_t slab_size_requested = 0;
     {
-        char * env_char = getenv("HBWMALLOC_slab_size_requested");
+        char * env_char = getenv("HBWMALLOC_BYTES");
         if (env_char!=NULL) {
             long units = 1L;
             if      ( NULL != strstr(env_char,"G") ) units = 1000000000L;
@@ -145,7 +145,7 @@ static void myhbwmalloc_init(void)
         long long freemem;
         long long maxmem = numa_node_size64(node, &freemem);
         if (myhbwmalloc_verbose) {
-            printf("hbwmalloc: numa_node_size64 says maxmem=%lld freemem=%lld for numa node %d\n", 
+            printf("hbwmalloc: numa_node_size64 says maxmem=%lld freemem=%lld for numa node %d\n",
                     maxmem, freemem, node);
         }
         myhbwmalloc_slab_size = freemem;
@@ -230,11 +230,7 @@ static void myhbwmalloc_init(void)
 
 /* PUBLIC API */
 
-/*
- *
- *
- * Before any other calls in this library can be used numa_available() must be called.
- * */
+/* before any other calls in this library can be used numa_available() must be called. */
 int hbw_check_available(void)
 {
     int rc = numa_available();
@@ -247,11 +243,11 @@ int hbw_check_available(void)
     /* this ensures that initializing within hbw_check_available()
      * can be thread-safe. */
     pthread_once( &myhbwmalloc_once_control, myhbwmalloc_init );
+
+    /* FIXME need thread barrier here to be thread-safe */
 #else
     myhbwmalloc_init();
 #endif
-
-    /* FIXME need thread barrier here to be thread-safe */
 
     if (myhbwmalloc_mspace == NULL) {
         fprintf(stderr, "hbwmalloc: mspace creation failed\n");
@@ -263,45 +259,70 @@ int hbw_check_available(void)
 
 void* hbw_malloc(size_t size)
 {
-    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
-        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
-        return malloc(size);
+    if (myhbwmalloc_mspace == NULL) {
+        if (!myhbwmalloc_hardfail) {
+            fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+            return malloc(size);
+        } else {
+            fprintf(stderr, "hbwmalloc: mspace invalid - cannot allocate from hbw heap\n");
+            abort();
+        }
     }
     return mspace_malloc(myhbwmalloc_mspace, size);
 }
 
 void* hbw_calloc(size_t nmemb, size_t size)
 {
-    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
-        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
-        return calloc(nmemb, size);
+    if (myhbwmalloc_mspace == NULL) {
+        if (!myhbwmalloc_hardfail) {
+            fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+            return calloc(nmemb, size);
+        } else {
+            fprintf(stderr, "hbwmalloc: mspace invalid - cannot allocate from hbw heap\n");
+            abort();
+        }
     }
     return mspace_calloc(myhbwmalloc_mspace, nmemb, size);
 }
 
 void* hbw_realloc (void *ptr, size_t size)
 {
-    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
-        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
-        return realloc(ptr, size);
+    if (myhbwmalloc_mspace == NULL) {
+        if (!myhbwmalloc_hardfail) {
+            fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+            return realloc(ptr, size);
+        } else {
+            fprintf(stderr, "hbwmalloc: mspace invalid - cannot allocate from hbw heap\n");
+            abort();
+        }
     }
     return mspace_realloc(myhbwmalloc_mspace, ptr, size);
 }
 
 void hbw_free(void *ptr)
 {
-    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
-        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
-        return free(ptr);
+    if (myhbwmalloc_mspace == NULL) {
+        if (!myhbwmalloc_hardfail) {
+            fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+            return free(ptr);
+        } else {
+            fprintf(stderr, "hbwmalloc: mspace invalid - cannot allocate from hbw heap\n");
+            abort();
+        }
     }
     mspace_free(myhbwmalloc_mspace, ptr);
 }
 
 int hbw_posix_memalign(void **memptr, size_t alignment, size_t size)
 {
-    if (myhbwmalloc_mspace == NULL && !myhbwmalloc_hardfail) {
-        fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
-        return posix_memalign(memptr, alignment, size);
+    if (myhbwmalloc_mspace == NULL) {
+        if (!myhbwmalloc_hardfail) {
+            fprintf(stderr, "hbwmalloc: mspace invalid - allocating from default heap\n");
+            return posix_memalign(memptr, alignment, size);
+        } else {
+            fprintf(stderr, "hbwmalloc: mspace invalid - cannot allocate from hbw heap\n");
+            abort();
+        }
     }
     *memptr = mspace_memalign(myhbwmalloc_mspace, alignment, size);
     return (*memptr == NULL) ? -1 : 0;
