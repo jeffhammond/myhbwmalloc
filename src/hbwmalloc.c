@@ -80,8 +80,8 @@ static void myhbwmalloc_init(void)
         /* FIXME this is a hack.  assumes HBW is only numa node 1. */
         if (max_numa_nodes <= 2) {
             myhbwmalloc_numa_node = max_numa_nodes-1;
-            if (myhbwmalloc_verbose && max_numa_nodes==1) {
-                printf("hbwmalloc: only 1 node found - using it for hbwmalloc\n");
+            if (myhbwmalloc_verbose) {
+                printf("hbwmalloc: max_numa_nodes = %d\n", max_numa_nodes);
             }
         } else {
             fprintf(stderr,"hbwmalloc: we support only 2 numa nodes, not %d\n", max_numa_nodes);
