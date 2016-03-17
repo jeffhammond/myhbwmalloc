@@ -10,6 +10,9 @@ int main(int argc, char * argv[])
 {
     MPI_Init(&argc, &argv);
 
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
     size_t bytes = (argc>1) ? atol(argv[1]) : 1024*1024;
 
     int avail = hbw_check_available();
@@ -23,13 +26,17 @@ int main(int argc, char * argv[])
         char * b = calloc(bytes,1);
         assert(b != NULL);
 
+        MPI_Barrier(MPI_COMM_WORLD);
         double t0 = MPI_Wtime();
         for (size_t i=0; i<bytes; i++) {
             b[i] = a[i];
         }
+        MPI_Barrier(MPI_COMM_WORLD);
         double t1 = MPI_Wtime();
         double dt = t1-t0;
-        printf("default heap: dt = %e, bw = %e B/s\n", dt, bytes/dt);
+        if (me==0) {
+            printf("def heap: dt = %e, bw = %e B/s\n", dt, bytes/dt);
+        }
 
         free(b);
         free(a);
@@ -41,13 +48,17 @@ int main(int argc, char * argv[])
         char * b = hbw_calloc(bytes,1);
         assert(b != NULL);
 
+        MPI_Barrier(MPI_COMM_WORLD);
         double t0 = MPI_Wtime();
         for (size_t i=0; i<bytes; i++) {
             b[i] = a[i];
         }
+        MPI_Barrier(MPI_COMM_WORLD);
         double t1 = MPI_Wtime();
         double dt = t1-t0;
-        printf("hbw heap: dt = %e, bw = %e B/s\n", dt, bytes/dt);
+        if (me==0) {
+            printf("hbw heap: dt = %e, bw = %e B/s\n", dt, bytes/dt);
+        }
 
         hbw_free(b);
         hbw_free(a);
