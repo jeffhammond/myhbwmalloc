@@ -1,0 +1,1 @@
+CFLAGS = -DONLY_MSPACES -I../include
