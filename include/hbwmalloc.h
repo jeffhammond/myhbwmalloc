@@ -1,3 +1,5 @@
+#include <stddef.h> /* size_t */
+
 /* definitions copied from hwmalloc.3 man page of memkind */
 int hbw_check_available(void);
 void* hbw_malloc(size_t size);

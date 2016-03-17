@@ -1,5 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <errno.h> /* hbw_check_available() return codes */
+
+#include <numa.h>
+
+#ifdef HAVE_PTHREAD
 #include <pthread.h> /* pthread_once */
+#endif
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -10,14 +18,13 @@
 
 /* INTERNAL API */
 
+#ifdef HAVE_PTHREAD
 /* see http://pubs.opengroup.org/onlinepubs/007908775/xsh/pthread_once.html */
 pthread_once_t myhbwmalloc_once_control = PTHREAD_ONCE_INIT;
+#endif
 
-int myhbwmalloc_verbose = 0;
-
-/* FIXME this is a hack.  assumes HBW is only numa node 1. */
-int myhbwmalloc_numa_node = 1;
-
+int myhbwmalloc_verbose;
+int myhbwmalloc_numa_node;
 size_t myhbwmalloc_slab_size;
 void * myhbwmalloc_slab;
 mspace myhbwmalloc_mspace;
@@ -26,6 +33,9 @@ static void myhbwmalloc_final(void)
 {
     if (myhbwmalloc_mspace != NULL) {
         size_t bytes_avail = destroy_mspace(myhbwmalloc_mspace);
+        if (myhbwmalloc_verbose) {
+            printf("hbwmalloc: destroy_mspace returned = %zu\n", bytes_avail);
+        }
     }
     if (myhbwmalloc_slab != NULL) {
         numa_free(myhbwmalloc_slab, myhbwmalloc_slab_size);
@@ -35,12 +45,16 @@ static void myhbwmalloc_final(void)
 static void myhbwmalloc_init(void)
 {
     /* verbose printout? */
+    myhbwmalloc_verbose = 0;
     {
         char * env_char = getenv("HBWMALLOC_VERBOSE");
         if (env_char != NULL) {
             myhbwmalloc_verbose = 1;
         }
     }
+
+    /* FIXME this is a hack.  assumes HBW is only numa node 1. */
+    myhbwmalloc_numa_node = 1;
 
 #if 0 /* unused */
     /* see if the user specifies a slab size */
@@ -115,7 +129,7 @@ static void myhbwmalloc_init(void)
 
     /* set to NULL before trying to initialize.  if we return before
      * successful creation of the mspace, then it will still be NULL,
-     * and we can use that in subsequent library calls to determine 
+     * and we can use that in subsequent library calls to determine
      * that the library failed to initialize. */
     myhbwmalloc_mspace = NULL;
 
@@ -123,7 +137,7 @@ static void myhbwmalloc_init(void)
     atexit(myhbwmalloc_final);
 
     myhbwmalloc_slab = numa_alloc_onnode( myhbwmalloc_slab_size, myhbwmalloc_numa_node);
-    if (slab==NULL) {
+    if (myhbwmalloc_slab==NULL) {
         fprintf(stderr, "hbwmalloc: numa_alloc_onnode returned NULL\n");
         return;
     } else {
@@ -160,9 +174,13 @@ int hbw_check_available(void)
         return ENODEV; /* ENODEV if high-bandwidth memory is unavailable. */
     }
 
+#ifdef HAVE_PTHREAD
     /* this ensures that initializing within hbw_check_available()
      * can be thread-safe. */
-    pthread_once( &myhbwmalloc_once_control, myhbwmalloc_init ); 
+    pthread_once( &myhbwmalloc_once_control, myhbwmalloc_init );
+#else
+    myhbwmalloc_init();
+#endif
 
     /* FIXME need thread barrier here to be thread-safe */
 
@@ -170,6 +188,8 @@ int hbw_check_available(void)
         fprintf(stderr, "hbwmalloc: mspace creation failed\n");
         return ENODEV; /* ENODEV if high-bandwidth memory is unavailable. */
     }
+
+    return 0;
 }
 
 void* hbw_malloc(size_t size)
