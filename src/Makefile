@@ -2,8 +2,9 @@ AR	= ar
 ARFLAGS = -r
 
 # posix_memalign not declared in strict C99 so we have to use GNU99
-CC	= mpicc
+CC	= mpiicc
 CFLAGS	= -std=gnu99 -Wall -Wextra -Werror -I../include
+CFLAGS += -O3 -xCORE-AVX2
 
 # do not build malloc, just the mspaces API
 CFLAGS += -DONLY_MSPACES

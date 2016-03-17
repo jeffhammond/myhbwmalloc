@@ -1,5 +1,5 @@
-CC	= mpicc
-CFLAGS	= -g3 -std=c99
+CC	= mpiicc
+CFLAGS	= -std=c99 -O3 -xCORE-AVX2
 CFLAGS += -Wall -Wextra -Werror
 CFLAGS += -I../include
 
