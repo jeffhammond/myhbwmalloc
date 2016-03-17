@@ -76,13 +76,17 @@ static void myhbwmalloc_init(void)
 
     /* detect and configure use of NUMA memory nodes */
     {
-        int max_numa_nodes = numa_max_node();
+        int max_possible_node  = numa_max_possible_node();
+        int num_possible_nodes = numa_num_possible_nodes();
+        int max_numa_nodes     = numa_max_node();
+        if (myhbwmalloc_verbose) {
+            printf("hbwmalloc: numa_max_possible_node()  = %d\n", max_possible_node );
+            printf("hbwmalloc: numa_num_possible_nodes() = %d\n", num_possible_nodes);
+            printf("hbwmalloc: numa_max_node()           = %d\n", max_numa_nodes    );
+        }
         /* FIXME this is a hack.  assumes HBW is only numa node 1. */
         if (max_numa_nodes <= 2) {
             myhbwmalloc_numa_node = max_numa_nodes-1;
-            if (myhbwmalloc_verbose) {
-                printf("hbwmalloc: max_numa_nodes = %d\n", max_numa_nodes);
-            }
         } else {
             fprintf(stderr,"hbwmalloc: we support only 2 numa nodes, not %d\n", max_numa_nodes);
         }
