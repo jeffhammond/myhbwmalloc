@@ -89,14 +89,14 @@ static void myhbwmalloc_init(void)
             printf("hbwmalloc: numa_num_configured_cpus()  = %d\n", num_configured_cpus);
         }
         /* FIXME this is a hack.  assumes HBW is only numa node 1. */
-        if (numa_num_configured_nodes <= 2) {
-            myhbwmalloc_numa_node = numa_num_configured_nodes-1;
+        if (num_configured_nodes <= 2) {
+            myhbwmalloc_numa_node = num_configured_nodes-1;
         } else {
-            fprintf(stderr,"hbwmalloc: we support only 2 numa nodes, not %d\n", numa_num_configured_nodes);
+            fprintf(stderr,"hbwmalloc: we support only 2 numa nodes, not %d\n", num_configured_nodes);
         }
 
         if (myhbwmalloc_verbose) {
-            for (int i=0; i<numa_num_configured_nodes; i++) {
+            for (int i=0; i<num_configured_nodes; i++) {
                 unsigned max_numa_cpus = numa_num_configured_cpus();
                 struct bitmask * mask = numa_bitmask_alloc( max_numa_cpus );
                 int rc = numa_node_to_cpus(i, mask);
