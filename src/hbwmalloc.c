@@ -149,7 +149,7 @@ static void myhbwmalloc_init(void)
         }
 
         /* see above regarding if the user lies to MPI. */
-        locked = multithreaded;
+        int locked = multithreaded;
         myhbwmalloc_mspace = create_mspace_with_base( myhbwmalloc_slab, myhbwmalloc_slab_size, locked);
         if (myhbwmalloc_mspace == NULL) {
             fprintf(stderr, "hbwmalloc: create_mspace_with_base returned NULL\n");
