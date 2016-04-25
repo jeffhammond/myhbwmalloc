@@ -30,7 +30,7 @@ size_t myhbwmalloc_slab_size;
 void * myhbwmalloc_slab;
 mspace myhbwmalloc_mspace;
 
-static void myhbwmalloc_final(void)
+void myhbwmalloc_final(void)
 {
     if (myhbwmalloc_mspace != NULL) {
         size_t bytes_avail = destroy_mspace(myhbwmalloc_mspace);
@@ -43,7 +43,7 @@ static void myhbwmalloc_final(void)
     }
 }
 
-static void myhbwmalloc_init(void)
+void myhbwmalloc_init(void)
 {
     /* set to NULL before trying to initialize.  if we return before
      * successful creation of the mspace, then it will still be NULL,
