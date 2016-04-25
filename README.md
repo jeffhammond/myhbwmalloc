@@ -29,3 +29,8 @@ make -C src && make -C test
 `HBWMALLOC_LOCKLESS` - library calls will not be thread-safe, in which case the application must use its own mutual exclusion if calls are made from more than one thread.
 
 Note that `HBWMALLOC_LOCKLESS` is set automatically if MPI is used in single-threaded mode (`MPI_THREAD_SINGLE`).  If you use `MPI_Init`, you are implicitly requesting `MPI_THREAD_SINGLE`.  It is _erroneous_ to use threads in an MPI program in which `MPI_THREAD_SINGLE` is requested.
+
+# Contributors
+
+* Jeff Hammond, Intel - Initial implementation.
+* Adrian Jackson, EPCC - Fortran interface.
