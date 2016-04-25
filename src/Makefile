@@ -1,4 +1,4 @@
-AR = ar
+AR 	= ar
 ARFLAGS = -r
 
 # posix_memalign not declared in strict C99 so we have to use GNU99
@@ -19,18 +19,19 @@ FC = mpiifort
 all: libhbwmalloc.a fortraninterface.o
 
 libhbwmalloc.a: dlmalloc.o hbwmalloc.o
-        $(AR) $(ARFLAGS) $@ dlmalloc.o hbwmalloc.o
+	$(AR) $(ARFLAGS) $@ dlmalloc.o hbwmalloc.o
 
 dlmalloc.o: dlmalloc.c
-        $(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 hbwmalloc.o: hbwmalloc.c mspace.h
-        $(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 fortraninterface.o: fortraninterface.f90
-        $(FC) -c $< -o $@
-        rm $@
+	$(FC) -c $< -o $@
+	-rm -f $@
 
 clean:
-        -rm -f dlmalloc.o hbwmalloc.o fortran_hbwmalloc.mod
-        -rm -f libhbwmalloc.a
+	-rm -f dlmalloc.o hbwmalloc.o fortran_hbwmalloc.mod
+	-rm -f libhbwmalloc.a
+
