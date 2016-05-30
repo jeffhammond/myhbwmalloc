@@ -1,6 +1,6 @@
 AC_PREREQ(2.62)
 
-AC_INIT([armci],[0.1])
+AC_INIT([hbwmalloc],[0.1])
 AC_CONFIG_AUX_DIR(m4)
 AC_CONFIG_MACRO_DIR(m4)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.11 color-tests parallel-tests subdir-objects])
@@ -43,7 +43,7 @@ HBWMALLOC_VERSION=${PACKAGE_VERSION}
 export HBWMALLOC_VERSION
 
 # ABI version
-AC_SUBST(libarmci_abi_version)
+AC_SUBST(libhbwmalloc_abi_version)
 
 # Release version
 # Produce a numeric version assuming the following format:
@@ -93,7 +93,7 @@ HBWMALLOC_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
 AC_SUBST(HBWMALLOC_NUMVERSION)
 AC_SUBST(HBWMALLOC_VERSION)
 
-AC_CONFIG_HEADER(src/armciconf.h)
+AC_CONFIG_HEADER(src/hbwmallocconf.h)
 AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *  (C) 2010 by Argonne National Laboratory.
