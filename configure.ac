@@ -1,7 +1,3 @@
-dnl
-dnl Copyright (C) 2010. See COPYRIGHT in top-level directory.
-dnl
-
 AC_PREREQ(2.62)
 
 AC_INIT([armci],[0.1])
@@ -20,6 +16,13 @@ PAC_PUSH_FLAG(CFLAGS)
 AC_PROG_CC(mpicc)
 AM_PROG_CC_C_O
 
+# Fortran
+if test ! -z "$MPIFC" ; then
+   FC=$MPIFC
+   export FC
+fi
+AC_PROG_FC(mpifort)
+
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
 # must come before LT_INIT
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
@@ -36,8 +39,8 @@ if test -s "$srcdir/VERSION" ; then
 else
     AC_MSG_ERROR([Version information not found. Configuration aborted.])
 fi
-ARMCI_VERSION=${PACKAGE_VERSION}
-export ARMCI_VERSION
+HBWMALLOC_VERSION=${PACKAGE_VERSION}
+export HBWMALLOC_VERSION
 
 # ABI version
 AC_SUBST(libarmci_abi_version)
@@ -62,11 +65,11 @@ AC_SUBST(libarmci_abi_version)
 # Numeric version will have 1 digit for MAJ, 2 digits for MIN,
 # 2 digits for REV, 1 digit for EXT and 2 digits for EXT_NUMBER.
 changequote(<<,>>)
-V1=`expr $ARMCI_VERSION : '\([0-9]*\)\.[0-9]*\.*[0-9]*[a-zA-Z]*[0-9]*'`
-V2=`expr $ARMCI_VERSION : '[0-9]*\.\([0-9]*\)\.*[0-9]*[a-zA-Z]*[0-9]*'`
-V3=`expr $ARMCI_VERSION : '[0-9]*\.[0-9]*\.*\([0-9]*\)[a-zA-Z]*[0-9]*'`
-V4=`expr $ARMCI_VERSION : '[0-9]*\.[0-9]*\.*[0-9]*\([a-zA-Z]*\)[0-9]*'`
-V5=`expr $ARMCI_VERSION : '[0-9]*\.[0-9]*\.*[0-9]*[a-zA-Z]*\([0-9]*\)'`
+V1=`expr $HBWMALLOC_VERSION : '\([0-9]*\)\.[0-9]*\.*[0-9]*[a-zA-Z]*[0-9]*'`
+V2=`expr $HBWMALLOC_VERSION : '[0-9]*\.\([0-9]*\)\.*[0-9]*[a-zA-Z]*[0-9]*'`
+V3=`expr $HBWMALLOC_VERSION : '[0-9]*\.[0-9]*\.*\([0-9]*\)[a-zA-Z]*[0-9]*'`
+V4=`expr $HBWMALLOC_VERSION : '[0-9]*\.[0-9]*\.*[0-9]*\([a-zA-Z]*\)[0-9]*'`
+V5=`expr $HBWMALLOC_VERSION : '[0-9]*\.[0-9]*\.*[0-9]*[a-zA-Z]*\([0-9]*\)'`
 changequote([,])
 
 if test "$V2" -le 9 ; then V2=0$V2 ; fi
@@ -86,9 +89,9 @@ elif test "$V4" = "p" ; then
 fi
 if test "$V5" -le 9 ; then V5=0$V5 ; fi
 
-ARMCI_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
-AC_SUBST(ARMCI_NUMVERSION)
-AC_SUBST(ARMCI_VERSION)
+HBWMALLOC_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
+AC_SUBST(HBWMALLOC_NUMVERSION)
+AC_SUBST(HBWMALLOC_VERSION)
 
 AC_CONFIG_HEADER(src/armciconf.h)
 AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
@@ -96,10 +99,10 @@ AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
  *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef _ARMCICONF_H_
-#define _ARMCICONF_H_
+#ifndef _HBWMALLOCCONF_H_
+#define _HBWMALLOCCONF_H_
 ])
-AH_BOTTOM([#endif /* _ARMCICONF_H_ */])
+AH_BOTTOM([#endif /* _HBWMALLOCCONF_H_ */])
 
 PAC_ARG_STRICT
 PAC_CC_FUNCTION_NAME_SYMBOL
@@ -126,13 +129,13 @@ if test "$ac_cv_prog_cc_c99" = "no" ; then
    AC_ERROR([C99 not supported by the compiler])
 fi
 
-AC_CHECK_HEADERS([execinfo.h stdint.h inttypes.h unistd.h time.h])
-AC_TYPE_UINT8_T
+AC_CHECK_HEADERS([stdio.h stdlib.h errno.h unistd.h numa.h])
+
 AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
-AC_CHECK_FUNC([usleep], [AC_DEFINE([HAVE_USLEEP], [1], [Define if usleep exists.])])
-AC_CHECK_FUNC([nanosleep], [AC_DEFINE([HAVE_NANOSLEEP], [1], [Define if nanosleep exists.])])
+
+AC_CHECK_FUNC([numa_alloc_onnode], [AC_DEFINE([HAVE_LIBNUMA], [1], [Define if libnuma is present.])])
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
@@ -142,62 +145,6 @@ AC_MSG_CHECKING(debugging support)
 AC_MSG_RESULT($debug)
 if test "$debug" = "yes"; then
    CFLAGS="$CFLAGS -g -O0"
-fi
-
-## Safety checks
-AC_ARG_ENABLE(safety-checks, AC_HELP_STRING([--disable-safety-checks],[Disable safety checks for better performance]),
-                 [ safety_enabled=$enableval ],
-                 [ safety_enabled=yes ])
-AC_MSG_CHECKING(whether safety checks are enabled)
-AC_MSG_RESULT($safety_enabled)
-if test "$safety_enabled" = "no"; then
-   AC_DEFINE(NO_SEATBELTS,1,[Defined when safety checks are disabled])
-fi
-
-## ARMCI Groups
-AC_ARG_ENABLE(armci-group, AC_HELP_STRING([--enable-armci-group],[Enable ARMCI subset-collective group formation]),
-                 [ armci_group_enabled=$enableval ],
-                 [ armci_group_enabled=no ])
-AC_MSG_CHECKING(whether ARMCI subset-collective group formation is enabled)
-AC_MSG_RESULT($armci_group_enabled)
-if test "$armci_group_enabled" = "yes"; then
-   AC_DEFINE(ARMCI_GROUP,1,[Defined when ARMCI subset-collective group formation is enabled])
-fi
-
-## Make explicit progress in nonblocking operations
-AC_ARG_ENABLE(explicit-progress, AC_HELP_STRING([--enable-explicit-progress],[Enable explicit MPI progress during nonblocking calls]),
-                 [ explicit_progress_enabled=$enableval ],
-                 [ explicit_progress_enabled=no ])
-AC_MSG_CHECKING(whether explicit MPI progress during nonblocking calls is enabled)
-AC_MSG_RESULT($explicit_progress_enabled)
-if test "$explicit_progress_enabled" = "yes"; then
-   AC_DEFINE(EXPLICIT_PROGRESS,1,[Defined when explicit MPI progress during nonblocking calls is enabled])
-fi
-
-## Active MPI_Win_allocate when we know it works
-AC_ARG_ENABLE(win-allocate, AC_HELP_STRING([--enable-win-allocate],[Use MPI_WIN_ALLOCATE.]),
-                 [ win_allocate_enabled=$enableval ],
-                 [ win_allocate_enabled=no ])
-AC_MSG_CHECKING(whether MPI_WIN_ALLOCATE will be used)
-AC_MSG_RESULT($win_allocate_enabled)
-if test "$win_allocate_enabled" = "yes"; then
-   AC_DEFINE(USE_WIN_ALLOCATE,1,[Defined when the use of MPI_WIN_ALLOCATE is enabled])
-fi
-
-# Check for support for weak symbols.
-AC_ARG_ENABLE(weak-symbols, AC_HELP_STRING([--enable-weak-symbols],
-                 [Use weak symbols to implement PARMCI routines (default)]),,
-                 enable_weak_symbols=yes)
-if test $enable_weak_symbols = yes ; then
-    # Turn off weak symbols if they aren't available
-    PAC_PROG_C_WEAK_SYMBOLS(,enable_weak_symbols=no)
-fi
-if test $enable_weak_symbols = "yes" ; then
-    AC_DEFINE(USE_WEAK_SYMBOLS,1,[Define if weak symbols should be used])
-    # Check for the ability to support multiple weak symbols
-    if test "$pac_cv_prog_c_weak_symbols" = "pragma weak" ; then
-       PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS(AC_DEFINE(HAVE_MULTIPLE_PRAGMA_WEAK,1,[Define if multiple weak symbols may be defined]))
-    fi
 fi
 
 ## Documentation

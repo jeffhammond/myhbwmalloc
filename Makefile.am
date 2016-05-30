@@ -13,9 +13,6 @@ src/mspace.h
 
 libhbwmalloc_la_LDFLAGS = -version-info $(libhbwmalloc_abi_version)
 
-libhbwmalloci_la_SOURCES = $(libhbwmalloc_la_SOURCES)
-libhbwmalloci_la_LDFLAGS = $(libhbwmalloc_abi_version)
-
 include_HEADERS = include/hbwmalloc.h src/mspace.h
 
 bin_PROGRAMS =
