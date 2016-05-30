@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef HAVE_ERRNO_H
 #include <errno.h> /* hbw_check_available() return codes */
+#endif
 
+#ifdef HAVE_LIBNUMA
 #include <numa.h>
-
-#ifdef HAVE_PTHREAD
-#include <pthread.h> /* pthread_once */
+#else
+#error This library requires libnuma.
 #endif
 
 #ifdef HAVE_MPI
@@ -19,6 +21,7 @@
 /* INTERNAL API */
 
 #ifdef HAVE_PTHREAD
+#include <pthread.h> /* pthread_once */
 /* see http://pubs.opengroup.org/onlinepubs/007908775/xsh/pthread_once.html */
 pthread_once_t myhbwmalloc_once_control = PTHREAD_ONCE_INIT;
 #endif
@@ -236,7 +239,11 @@ int hbw_check_available(void)
     int rc = numa_available();
     if (rc != 0) {
         fprintf(stderr, "hbwmalloc: libnuma error = %d\n", rc);
+#ifdef HAVE_ERRNO_H
         return ENODEV; /* ENODEV if high-bandwidth memory is unavailable. */
+#else
+        return -1;
+#endif
     }
 
 #ifdef HAVE_PTHREAD

@@ -129,7 +129,7 @@ if test "$ac_cv_prog_cc_c99" = "no" ; then
    AC_ERROR([C99 not supported by the compiler])
 fi
 
-AC_CHECK_HEADERS([stdio.h stdlib.h errno.h unistd.h numa.h])
+AC_CHECK_HEADERS([errno.h unistd.h numa.h])
 
 AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"

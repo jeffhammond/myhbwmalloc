@@ -9,11 +9,9 @@ libhbwmalloc_la_SOURCES = src/hbwmalloc.c        \
                           src/dlmalloc.c         \
 			  src/fortraninterface.f90
 
-src/mspace.h
-
 libhbwmalloc_la_LDFLAGS = -version-info $(libhbwmalloc_abi_version)
 
-include_HEADERS = include/hbwmalloc.h src/mspace.h
+include_HEADERS = src/hbwmalloc.h src/mspace.h
 
 bin_PROGRAMS =
 check_PROGRAMS =
