@@ -1,0 +1,29 @@
+sudo: false
+language: c
+virtualenv:
+  system_site_packages: true
+os:
+  - linux
+  - osx
+# Travis will export CC=$compiler
+compiler:
+  - clang
+  - gcc
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - libnuma-dev
+env:
+before_install:
+install:
+before_script:
+script:
+after_failure:
+notifications:
+  email:
+    recipients:
+      - jeff.science@gmail.com
+    on_success: [change]
+    on_failure: [always]
