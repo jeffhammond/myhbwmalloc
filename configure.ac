@@ -137,7 +137,16 @@ AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected]
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
 
-PAC_LIB_MPI([AC_DEFINE(HAVE_MPI,1,[Defined when MPI library is detected])],[])
+## MPI-aware
+AC_ARG_ENABLE(mpi, AC_HELP_STRING([--enable-mpi],[Use MPI.]),
+                 [ mpi_enabled=$enableval ],
+                 [ mpi_enabled=no ])
+AC_MSG_CHECKING(whether MPI will be used)
+AC_MSG_RESULT($mpi_enabled)
+if test "$mpi_enabled" = "yes"; then
+   ##AC_DEFINE(HAVE_MPI,1,[Defined when the use of MPI is enabled])
+   PAC_LIB_MPI([AC_DEFINE(HAVE_MPI,1,[Defined when MPI library is detected])],[])
+fi
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
