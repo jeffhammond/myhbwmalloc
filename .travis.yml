@@ -24,9 +24,9 @@ env:
 before_install:
   - which $CC
   - $CC -v
+  - find /usr -name gfortran\*
   - which gfortran
   - gfortran -v
-  - find /usr -name gfortran\*
 install:
 before_script:
   - ./autogen.sh
