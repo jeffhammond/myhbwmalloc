@@ -14,24 +14,21 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - libnuma-dev
-    - gcc-4.8
-    - gfortran-4.8
-    - gcc-4.9
-    - gfortran-4.9
     - gcc-5
     - gfortran-5
 env:
+    - FC=gfortran-5
 before_install:
   - which $CC
   - $CC -v
   - find /usr -name gfortran\*
-  - which gfortran
-  - gfortran -v
+  - which $FC
+  - $FC -v
 install:
 before_script:
   - ./autogen.sh
 script:
-  - ./configure FC=gfortran LIBS="-lnuma"
+  - ./configure LIBS="-lnuma"
   - make V=1
   - make V=1 check
 after_failure:
