@@ -13,7 +13,7 @@ if test ! -z "$MPICC" ; then
    export CC
 fi
 PAC_PUSH_FLAG(CFLAGS)
-AC_PROG_CC(mpicc)
+AC_PROG_CC([mpicc cc])
 AM_PROG_CC_C_O
 
 # Fortran
@@ -21,7 +21,8 @@ if test ! -z "$MPIFC" ; then
    FC=$MPIFC
    export FC
 fi
-AC_PROG_FC(mpifort)
+AC_PROG_FC([mpifort mpif90 mpifc ftn ifort gfortran-6 gfortran-5 gfortran])
+AC_PROG_FC_C_O
 
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
 # must come before LT_INIT
@@ -130,12 +131,11 @@ if test "$ac_cv_prog_cc_c99" = "no" ; then
 fi
 
 AC_CHECK_HEADERS([errno.h unistd.h numa.h])
+AC_CHECK_LIB(numa,numa_free)
 
 AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
-
-AC_CHECK_FUNC([numa_alloc_onnode], [AC_DEFINE([HAVE_LIBNUMA], [1], [Define if libnuma is present.])])
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),

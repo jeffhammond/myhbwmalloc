@@ -7,7 +7,7 @@
 #include <errno.h> /* hbw_check_available() return codes */
 #endif
 
-#ifdef HAVE_LIBNUMA
+#ifdef HAVE_NUMA_H
 #include <numa.h>
 #else
 #error This library requires libnuma.
