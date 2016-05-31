@@ -1,3 +1,5 @@
+#include "hbwmallocconf.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
