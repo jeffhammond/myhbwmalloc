@@ -28,7 +28,7 @@ install:
 before_script:
   - ./autogen.sh
 script:
-  - ./configure LIBS="-lnuma"
+  - ./configure #LIBS="-lnuma"
   - make V=1
   - make V=1 check
 after_failure:
