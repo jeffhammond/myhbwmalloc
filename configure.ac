@@ -137,7 +137,7 @@ AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected]
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
 
-PAC_LIB_MPI([AC_DEFINE(HAVE_MPI,1,[Defined when MPI library is detected])
+PAC_LIB_MPI([AC_DEFINE(HAVE_MPI,1,[Defined when MPI library is detected])],[])
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),

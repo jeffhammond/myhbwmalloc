@@ -32,9 +32,9 @@ int main(int argc, char * argv[])
 #endif
 
     int avail = hbw_check_available();
+    int consensus = avail;
 #ifdef HAVE_MPI
     if (avail<0) avail = -avail; /* just look at absolute value since only zero is success */
-    int consensus;
     MPI_Allreduce(&avail, &consensus, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif
     if (me==0) {
