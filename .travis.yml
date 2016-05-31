@@ -14,10 +14,19 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - libnuma-dev
+    - gcc-4.8
+    - gfortran-4.8
+    - gcc-4.9
+    - gfortran-4.9
     - gcc-5
     - gfortran-5
 env:
 before_install:
+  - which $CC
+  - $CC -v
+  - which gfortran
+  - gfortran -v
+  - find /usr -name gfortran\*
 install:
 before_script:
   - ./autogen.sh
