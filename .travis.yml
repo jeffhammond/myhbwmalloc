@@ -4,7 +4,6 @@ virtualenv:
   system_site_packages: true
 os:
   - linux
-  - osx
 # Travis will export CC=$compiler
 compiler:
   - clang
@@ -15,12 +14,20 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - libnuma-dev
+    - gcc-5
+    - gfortran-5
 env:
 before_install:
 install:
 before_script:
+  - ./autogen.sh
 script:
+  - ./configure FC=gfortran LIBS="-lnuma"
+  - make V=1
+  - make V=1 check
 after_failure:
+  - echo "Sad panda"
+  - find . -name config.log -exec cat {} ";"
 notifications:
   email:
     recipients:
