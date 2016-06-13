@@ -260,7 +260,11 @@ int hbw_check_available(void)
 
     if (myhbwmalloc_mspace == NULL) {
         fprintf(stderr, "hbwmalloc: mspace creation failed\n");
+#ifdef HAVE_ERRNO_H
         return ENODEV; /* ENODEV if high-bandwidth memory is unavailable. */
+#else
+        return -1;
+#endif
     }
 
     return 0;
