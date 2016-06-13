@@ -1,5 +1,9 @@
 # HBWMALLOC
 
+## Quality Control
+
+[![Build Status](https://travis-ci.org/jeffhammond/myhbwmalloc.svg?branch=master)](https://travis-ci.org/jeffhammond/myhbwmalloc) - Note this only tests the compilation, not the execution, because the Travis CI ecosystem does not support hardware that makes the tests nontrivial.
+
 ## Interface
 
 ```
